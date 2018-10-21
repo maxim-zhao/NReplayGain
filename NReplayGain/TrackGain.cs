@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace NReplayGain
 {
@@ -8,7 +7,6 @@ namespace NReplayGain
     /// </summary>
     public class TrackGain : IDisposable
     {
-        private int sampleSize;
         internal GainData gainData;
 
         private double[] lInPreBuf;
@@ -31,15 +29,14 @@ namespace NReplayGain
         private double rSum;
         private int freqIndex;
 
-        public TrackGain(int sampleRate, int sampleSize)
+        public TrackGain(int sampleRate)
         {
-            if(!ReplayGain.IsSupportedFormat(sampleRate, sampleSize)) {
-                throw new NotSupportedException("Unsupported format. Supported sample sizes are 16, 24.");
+            if(!ReplayGain.IsSupportedFormat(sampleRate)) {
+                throw new NotSupportedException("Unsupported sampling rate");
             }
 
             this.freqIndex = ReplayGain.FreqInfos.IndexOf(i => i.SampleRate == sampleRate);
 
-            this.sampleSize = sampleSize;
             this.gainData = new GainData();
 
             this.lInPreBuf = new double[ReplayGain.MAX_ORDER * 2];
@@ -59,7 +56,7 @@ namespace NReplayGain
             this.rOut = new CPtr<double>(rOutBuf, ReplayGain.MAX_ORDER);
         }
 
-        public void AnalyzeSamples(int[] leftSamples, int[] rightSamples)
+        public void AnalyzeSamples(float[] leftSamples, float[] rightSamples)
         {
             if (leftSamples.Length != rightSamples.Length)
             {
@@ -71,25 +68,11 @@ namespace NReplayGain
             double[] leftDouble = new double[numSamples];
             double[] rightDouble = new double[numSamples];
 
-            if (this.sampleSize == 16)
+            for (int i = 0; i < numSamples; ++i)
             {
-                for (int i = 0; i < numSamples; ++i)
-                {
-                    leftDouble[i] = leftSamples[i];
-                    rightDouble[i] = rightSamples[i];
-                }
-            }
-            else if (this.sampleSize == 24)
-            {
-                for (int i = 0; i < numSamples; ++i)
-                {
-                    leftDouble[i] = leftSamples[i] * ReplayGain.FACTOR_24BIT;
-                    rightDouble[i] = rightSamples[i] * ReplayGain.FACTOR_24BIT;
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException();
+                // We scale to 16-bit range for analysis
+                leftDouble[i] = leftSamples[i] * 32767;
+                rightDouble[i] = rightSamples[i] * 32767;
             }
 
             double tmpPeak;
