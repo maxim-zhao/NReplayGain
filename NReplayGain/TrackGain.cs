@@ -56,14 +56,9 @@ namespace NReplayGain
             this.rOut = new CPtr<double>(rOutBuf, ReplayGain.MAX_ORDER);
         }
 
-        public void AnalyzeSamples(float[] leftSamples, float[] rightSamples)
+        public void AnalyzeSamples(float[] samples, int count)
         {
-            if (leftSamples.Length != rightSamples.Length)
-            {
-                throw new ArgumentException("leftSamples must be as big as rightSamples");
-            }
-
-            int numSamples = leftSamples.Length;
+            int numSamples = count / 2;
 
             double[] leftDouble = new double[numSamples];
             double[] rightDouble = new double[numSamples];
@@ -71,8 +66,8 @@ namespace NReplayGain
             for (int i = 0; i < numSamples; ++i)
             {
                 // We scale to 16-bit range for analysis
-                leftDouble[i] = leftSamples[i] * 32767;
-                rightDouble[i] = rightSamples[i] * 32767;
+                leftDouble[i] = samples[i * 2] * 32767;
+                rightDouble[i] = samples[i * 2 + 1] * 32767;
             }
 
             double tmpPeak;
